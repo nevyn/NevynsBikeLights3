@@ -60,8 +60,9 @@ BoundFunctionAnimation *anims[] = {
 };
 static const int animsCount = sizeof(anims)/sizeof(BoundFunctionAnimation*);
 
+static const int defaultBgIndex = 0;
 int currentBgIndex = -1;
-int requestedBgIndex = 0;
+int requestedBgIndex = defaultBgIndex;
 BoundFunctionAnimation *bgAnims[] = {
   &black,
   &shine,
@@ -92,7 +93,7 @@ void setup()
         ansys.addAnimation(anim);
     }
     clear.enabled = true;
-    setCurrentBgAnim(0);
+    setCurrentBgAnim(defaultBgIndex);
 }
 
 
