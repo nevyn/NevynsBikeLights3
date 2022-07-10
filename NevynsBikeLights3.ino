@@ -209,7 +209,7 @@ void BlinkFunc(Animation *self, int direction, float f)
     
 
     int c = sin8(f*255)/2;
-    indicators.leds[(direction == 1) ? 0 : indicators.length-1] = CRGB(c, c, 0);
+    indicators.leds[(direction == -1) ? 0 : indicators.length-1] = CRGB(c, c, 0);
 }
 
 void BlackFunc(Animation *self, int _, float t)
@@ -234,7 +234,7 @@ void ShineFunc(Animation *self, int _, float t)
         }
     }
 
-    //indicators.leds[1] = CRGB(128, 128, 128);
+    indicators.leds[1] = CRGB(128, 128, 128);
 }
 
 void SparklyShineFunc(Animation *self, int type, float t)
@@ -260,8 +260,8 @@ void SparklyShineFunc(Animation *self, int type, float t)
         led->leds[i] = CHSV(hue + (255/c)*i, 255, value);
     }
 
-    if(type < 1)
+    if(type < 2)
         ShineFunc(self, type, t);
     
-    //indicators.leds[1] = led->leds[center];
+    indicators.leds[1] = led->leds[center-2];
 }
