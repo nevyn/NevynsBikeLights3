@@ -1,9 +1,14 @@
-#include <FastLED.h>
-#include <ezButton.h>
-#include <OverAnimate.h>
+#include <FastLED.h>      // http://fastled.io/
+#include <ezButton.h>     // https://arduinogetstarted.com/tutorials/arduino-button-library
+#include <OverAnimate.h>  // https://github.com/nevyn/OverAnimate
+#define ENCODER_DO_NOT_USE_INTERRUPTS 1
+#include <Encoder.h>      // https://www.pjrc.com/teensy/td_libs_Encoder.html
+
 #include "SubStrip.h"
 
-// global data
+
+// LEDs/output
+
 #define DATAPIN    5
 #define CLOCKPIN   6
 
@@ -17,9 +22,12 @@ SubStrip full(leds, TotalPixelCount);
 SubStrip indicators(leds, IndicatorPixelCount);
 SubStrip front(leds+3, FrontPixelCount);
 
-// buttons
+
+// buttons/input
 ezButton btnLeft(10);
 ezButton btnRight(16);
+ezButton btnKnob(14);
+Encoder  knob(3, 2); // inputs 2 and 3 have interrupts 1 and 0 respectively on the Pro Micro
 
 // animations
 AnimationSystem ansys;
@@ -52,7 +60,7 @@ BoundFunctionAnimation *anims[] = {
 };
 static const int animsCount = sizeof(anims)/sizeof(BoundFunctionAnimation*);
 
-int currentBgIndex = 0;
+int currentBgIndex = -1;
 BoundFunctionAnimation *bgAnims[] = {
   &black,
   &shine,
@@ -80,7 +88,7 @@ void setup()
         ansys.addAnimation(anim);
     }
     clear.enabled = true;
-    setCurrentBgAnim(2);
+    setCurrentBgAnim(0);
 }
 
 
@@ -106,6 +114,9 @@ void loop()
 
 void update()
 {
+    int newBgIndex = abs(knob.read() % bgAnimsCount);
+    setCurrentBgAnim(newBgIndex);
+
     if(btnLeft.getState() == LOW)
     {
         if(blinkLeft.enabled == false)
@@ -133,6 +144,10 @@ void update()
 
 void setCurrentBgAnim(int newIndex)
 {
+    if(newIndex == currentBgIndex) return;
+    Serial.print("New background: ");
+    Serial.println(newIndex);
+
     int oldIndex = currentBgIndex;
     currentBgIndex = newIndex;
 
@@ -199,6 +214,8 @@ void ShineFunc(Animation *self, int _, float t)
             led->leds[i] = led->leds[i] + CRGB(strength, l==0?strength:0, l==0?strength:0);
         }
     }
+
+    //indicators.leds[1] = CRGB(128, 128, 128);
 }
 
 void SparklyShineFunc(Animation *self, int type, float t)
@@ -226,4 +243,6 @@ void SparklyShineFunc(Animation *self, int type, float t)
 
     if(type < 1)
         ShineFunc(self, type, t);
+    
+    //indicators.leds[1] = led->leds[center];
 }
