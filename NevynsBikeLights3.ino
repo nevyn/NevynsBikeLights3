@@ -26,19 +26,42 @@ AnimationSystem ansys;
 
 void BlinkFunc(Animation *self, int direction, float t);
 void ShineFunc(Animation *self, int _, float t);
+void SparklyShineFunc(Animation *self, int _, float t);
 void BlackFunc(Animation *self, int _, float t);
 
 BoundFunctionAnimation blinkLeft(BlinkFunc,   1);
 BoundFunctionAnimation blinkRight(BlinkFunc, -1);
-BoundFunctionAnimation shine(ShineFunc, 0);
+
+BoundFunctionAnimation clear(BlackFunc, 0);
 BoundFunctionAnimation black(BlackFunc, 0);
+BoundFunctionAnimation shine(ShineFunc, 0);
+BoundFunctionAnimation sparklyShineIn(SparklyShineFunc, 0);
+BoundFunctionAnimation sparklyShineOut(SparklyShineFunc, 1);
+BoundFunctionAnimation sparklyIn(SparklyShineFunc, 2);
+BoundFunctionAnimation sparklyOut(SparklyShineFunc, 3);
 BoundFunctionAnimation *anims[] = {
+  &clear,
   &black,
   &shine,
+  &sparklyShineIn,
+  &sparklyShineOut,
+  &sparklyIn,
+  &sparklyOut,
   &blinkLeft,
   &blinkRight
 };
-static const int kAnimCount = sizeof(anims)/sizeof(BoundFunctionAnimation*);
+static const int animsCount = sizeof(anims)/sizeof(BoundFunctionAnimation*);
+
+int currentBgIndex = 0;
+BoundFunctionAnimation *bgAnims[] = {
+  &black,
+  &shine,
+  &sparklyShineIn,
+  &sparklyShineOut,
+  &sparklyIn,
+  &sparklyOut,
+};
+static const int bgAnimsCount = sizeof(bgAnims)/sizeof(BoundFunctionAnimation*);
 
 
 // main app
@@ -48,7 +71,7 @@ void setup()
     FastLED.setBrightness(192);
     Serial.begin(9600);
 
-    for(int i = 0; i < kAnimCount; i++) {
+    for(int i = 0; i < animsCount; i++) {
         BoundFunctionAnimation *anim = anims[i];
         anim->beginTime = ansys.now();
         anim->duration = 1.0;
@@ -56,7 +79,8 @@ void setup()
         anim->enabled = false;
         ansys.addAnimation(anim);
     }
-    black.enabled = true;
+    clear.enabled = true;
+    setCurrentBgAnim(2);
 }
 
 
@@ -107,6 +131,25 @@ void update()
     }
 }
 
+void setCurrentBgAnim(int newIndex)
+{
+    int oldIndex = currentBgIndex;
+    currentBgIndex = newIndex;
+
+    bgAnims[oldIndex]->enabled = false;
+    bgAnims[currentBgIndex]->enabled = true;
+    bgAnims[currentBgIndex]->beginTime = ansys.now();
+}
+
+
+
+
+
+
+
+
+
+
 // animation funcs
 
 void BlinkFunc(Animation *self, int direction, float f)
@@ -135,27 +178,52 @@ void BlinkFunc(Animation *self, int direction, float f)
     indicators.leds[(direction == 1) ? 0 : indicators.length-1] = CRGB(c, c, 0);
 }
 
-void ShineFunc(Animation *self, int _, float t)
-{
-  /*LedStrip *leds[] = {&frontLeds, &rearLeds};
-  for(int l = 0; l < 2; l++) {
-    LedStrip *led = leds[l];
-    int mid = led->numPixels()/2;
-    for(int i = 0; i < led->numPixels(); i++) {
-      int distance = abs(mid - i);
-      int range = led->numPixels()/4;
-      int strength = frontLedStrip.gamma8(clamp((range-distance)*(255/range), 0, 255));
-      led->setPixelColor(i, Adafruit_NeoPixel::Color(strength, l==0?strength:0, l==0?strength:0));
-    }
-  }
-
-  dashLeds.setPixelColor(2, Adafruit_NeoPixel::Color(0, 0, 1));*/
-}
-
 void BlackFunc(Animation *self, int _, float t)
 {
     for(int i = 0; i < full.numPixels(); i++) {
         int c = 0;
         full.leds[i] = CRGB(0,0,0);
     }
+}
+
+void ShineFunc(Animation *self, int _, float t)
+{
+    SubStrip *leds[] = {&front, /*&rear*/};
+    for(int l = 0, c = sizeof(leds)/sizeof(*leds); l < c; l++) {
+        SubStrip *led = leds[l];
+        int mid = led->numPixels()/2;
+        for(int i = 0; i < led->numPixels(); i++) {
+            int distance = abs(mid - i);
+            int range = led->numPixels()/4;
+            uint8_t strength = gamma8(clamp((range-distance)*(255/range), 0, 255));
+            led->leds[i] = led->leds[i] + CRGB(strength, l==0?strength:0, l==0?strength:0);
+        }
+    }
+}
+
+void SparklyShineFunc(Animation *self, int type, float t)
+{
+    SubStrip *led = &front;
+
+    uint8_t hue1 = t*255;
+    uint8_t hue2 = (1-t)*255;
+    int center = led->numPixels()/2;
+    for(int i = 0, c = led->numPixels(); i < c; i++)
+    {
+        uint8_t hue;
+        uint8_t value;
+        if(type%2 == 0)
+            hue = i > center ? hue1 : hue2;
+        if(type%2 == 1)
+            hue = i < center ? hue1 : hue2;
+        int distanceToCenter = abs(i - center);
+        if(type < 1)
+            value = (1-(distanceToCenter/(float)center))*255;
+        else
+            value = 255;
+        led->leds[i] = CHSV(hue + (255/c)*i, 255, value);
+    }
+
+    if(type < 1)
+        ShineFunc(self, type, t);
 }
