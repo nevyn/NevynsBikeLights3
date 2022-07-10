@@ -120,6 +120,15 @@ void BlinkFunc(Animation *self, int direction, float f)
     led->leds[litIndex] = CHSV(HUE_YELLOW, 192, 255);
     led->leds[oneBehind] = CHSV(HUE_YELLOW, 192, 128);
     led->leds[twoBehind] = CHSV(HUE_YELLOW, 192, 64);
+
+    if(f > 0.7)
+    {
+        float subf = (f-0.6)*2.5;
+        for(int i = 0, j = direction>0?led->numPixels()-1:0; i < 3; i++, j -= direction)
+        {
+            led->leds[j] = CHSV(HUE_YELLOW, 192, (1-subf)*255);
+        }
+    }
     
 
     int c = sin8(f*255)/2;
