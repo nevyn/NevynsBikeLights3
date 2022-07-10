@@ -115,11 +115,12 @@ void BlinkFunc(Animation *self, int direction, float f)
     
     int beginAtIndex = led->numPixels()/2;
     int litIndex = beginAtIndex + f*direction*led->numPixels()/2;
-    for(int p = 0; p < led->numPixels(); p++) {
-        if(p == litIndex-1 || p == litIndex || p == litIndex+1) {
-            led->leds[p] = CHSV(HUE_YELLOW + f*128, 192, 192);
-        }
-    }
+    int oneBehind = litIndex - direction;
+    int twoBehind = litIndex - direction*2;
+    led->leds[litIndex] = CHSV(HUE_YELLOW, 192, 255);
+    led->leds[oneBehind] = CHSV(HUE_YELLOW, 192, 128);
+    led->leds[twoBehind] = CHSV(HUE_YELLOW, 192, 64);
+    
 
     int c = sin8(f*255)/2;
     indicators.leds[(direction == 1) ? 0 : indicators.length-1] = CRGB(c, c, 0);
