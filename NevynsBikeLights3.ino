@@ -2,7 +2,7 @@
 #include <ezButton.h>     // https://arduinogetstarted.com/tutorials/arduino-button-library
 #include <OverAnimate.h>  // https://github.com/nevyn/OverAnimate
 #define ENCODER_DO_NOT_USE_INTERRUPTS 1
-#include <Encoder.h>      // https://www.pjrc.com/teensy/td_libs_Encoder.html
+#include "Rotary.h"      // https://github.com/buxtronix/arduino/tree/master/libraries/Rotary
 
 #include "SubStrip.h"
 
@@ -27,7 +27,7 @@ SubStrip front(leds+3, FrontPixelCount);
 ezButton btnLeft(10);
 ezButton btnRight(16);
 ezButton btnKnob(14);
-Encoder  knob(3, 2); // inputs 2 and 3 have interrupts 1 and 0 respectively on the Pro Micro
+Rotary  knob(3, 2); // inputs 2 and 3 have interrupts 1 and 0 respectively on the Pro Micro
 
 // animations
 AnimationSystem ansys;
@@ -61,6 +61,7 @@ BoundFunctionAnimation *anims[] = {
 static const int animsCount = sizeof(anims)/sizeof(BoundFunctionAnimation*);
 
 int currentBgIndex = -1;
+int requestedBgIndex = 0;
 BoundFunctionAnimation *bgAnims[] = {
   &black,
   &shine,
@@ -78,6 +79,9 @@ void setup()
     FastLED.addLeds<DOTSTAR, DATAPIN, CLOCKPIN, BGR>(leds, TotalPixelCount);
     FastLED.setBrightness(192);
     Serial.begin(9600);
+
+    attachInterrupt(digitalPinToInterrupt(knob.pin1), rotate, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(knob.pin2), rotate, CHANGE);
 
     for(int i = 0; i < animsCount; i++) {
         BoundFunctionAnimation *anim = anims[i];
@@ -114,7 +118,7 @@ void loop()
 
 void update()
 {
-    int newBgIndex = abs(knob.read() % bgAnimsCount);
+    int newBgIndex = requestedBgIndex % bgAnimsCount;
     setCurrentBgAnim(newBgIndex);
 
     if(btnLeft.getState() == LOW)
@@ -140,6 +144,21 @@ void update()
         blinkRight.enabled = false;
         blinkLeft.enabled = false;
     }
+}
+
+void rotate()
+{
+  unsigned char result = knob.process();
+  if (result == DIR_CW)
+  {
+    requestedBgIndex++;
+  }
+  else if (result == DIR_CCW)
+  {
+    requestedBgIndex--;
+    if(requestedBgIndex < 0)
+        requestedBgIndex = bgAnimsCount-1;
+  }
 }
 
 void setCurrentBgAnim(int newIndex)
