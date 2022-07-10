@@ -29,6 +29,15 @@ ezButton btnRight(16);
 ezButton btnKnob(14);
 Rotary  knob(3, 2); // inputs 2 and 3 have interrupts 1 and 0 respectively on the Pro Micro
 
+typedef enum {
+    KnobBg,
+    KnobBrightness,
+
+    KnobModeCount
+} KnobMode;
+KnobMode knobMode = KnobBg;
+uint8_t requestedBrightness = 192;
+
 // animations
 AnimationSystem ansys;
 
@@ -78,7 +87,6 @@ static const int bgAnimsCount = sizeof(bgAnims)/sizeof(BoundFunctionAnimation*);
 void setup()
 { 
     FastLED.addLeds<DOTSTAR, DATAPIN, CLOCKPIN, BGR>(leds, TotalPixelCount);
-    FastLED.setBrightness(192);
     Serial.begin(9600);
 
     attachInterrupt(digitalPinToInterrupt(knob.pin1), rotate, CHANGE);
@@ -102,6 +110,7 @@ void loop()
 {
     btnLeft.loop();
     btnRight.loop();
+    btnKnob.loop();
   
     unsigned long now = millis();
     if(!lastMillis) {
@@ -121,6 +130,19 @@ void update()
 {
     int newBgIndex = requestedBgIndex % bgAnimsCount;
     setCurrentBgAnim(newBgIndex);
+
+    if(requestedBrightness != FastLED.getBrightness())
+    {
+        Serial.print("Changing to brightness ");
+        Serial.println(requestedBrightness);
+        FastLED.setBrightness(requestedBrightness);
+    }
+    if(btnKnob.isPressed())
+    {
+        knobMode = (knobMode + 1) % KnobModeCount;
+        Serial.print("Changing to knob mode ");
+        Serial.println(knobMode);
+    }
 
     if(btnLeft.getState() == LOW)
     {
@@ -149,17 +171,20 @@ void update()
 
 void rotate()
 {
-  unsigned char result = knob.process();
-  if (result == DIR_CW)
-  {
-    requestedBgIndex++;
-  }
-  else if (result == DIR_CCW)
-  {
-    requestedBgIndex--;
-    if(requestedBgIndex < 0)
-        requestedBgIndex = bgAnimsCount-1;
-  }
+    unsigned char result = knob.process();
+    int change = (result == DIR_CW) ? 1 :
+        (result == DIR_CCW) ? -1 :
+        0;
+    if(change == 0) return;
+
+    if(knobMode == KnobBg)
+    {
+        requestedBgIndex = clamp(requestedBgIndex + change, 0, bgAnimsCount-1);
+    }
+    else if(knobMode == KnobBrightness)
+    {
+        requestedBrightness = clamp(requestedBrightness + change*10, 0, 255);
+    }
 }
 
 void setCurrentBgAnim(int newIndex)
