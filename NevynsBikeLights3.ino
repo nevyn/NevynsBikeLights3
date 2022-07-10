@@ -44,7 +44,7 @@ static const int kAnimCount = sizeof(anims)/sizeof(BoundFunctionAnimation*);
 // main app
 void setup()
 { 
-    FastLED.addLeds<DOTSTAR, DATAPIN, CLOCKPIN>(leds, TotalPixelCount); 
+    FastLED.addLeds<DOTSTAR, DATAPIN, CLOCKPIN, BGR>(leds, TotalPixelCount);
     FastLED.setBrightness(192);
     Serial.begin(9600);
 
