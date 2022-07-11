@@ -43,7 +43,7 @@ typedef enum {
     KnobModeCount
 } KnobMode;
 KnobMode knobMode = KnobBg;
-uint8_t requestedBrightness = 192;
+uint8_t requestedBrightness = 64;
 
 // animations
 AnimationSystem ansys;
