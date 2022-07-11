@@ -39,11 +39,13 @@ Rotary  knob(3, 2); // inputs 2 and 3 have interrupts 1 and 0 respectively on th
 typedef enum {
     KnobBg,
     KnobBrightness,
+    KnobDuration,
 
     KnobModeCount
 } KnobMode;
 KnobMode knobMode = KnobBg;
 uint8_t requestedBrightness = 64;
+float requestedDuration = 1.0;
 
 // animations
 AnimationSystem ansys;
@@ -144,6 +146,15 @@ void update()
         Serial.println(requestedBrightness);
         FastLED.setBrightness(requestedBrightness);
     }
+    if(requestedDuration != black.duration)
+    {
+        Serial.print("Changing to duration ");
+        Serial.println(requestedDuration);
+        for(int i = 0; i < bgAnimsCount; i++) {
+            BoundFunctionAnimation *anim = bgAnims[i];
+            anim->duration = requestedDuration;
+        }
+    }
     if(btnKnob.isPressed())
     {
         knobMode = (knobMode + 1) % KnobModeCount;
@@ -191,6 +202,10 @@ void rotate()
     else if(knobMode == KnobBrightness)
     {
         requestedBrightness = clamp(requestedBrightness + change*10, 0, 255);
+    }
+    else if(knobMode == KnobDuration)
+    {
+        requestedDuration = clamp(requestedDuration + change*0.1, 0.1, 4.0);
     }
 }
 
