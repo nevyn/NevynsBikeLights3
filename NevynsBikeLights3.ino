@@ -15,12 +15,19 @@
 typedef enum {
     IndicatorPixelCount = 3,
     FrontPixelCount = 23,
-    TotalPixelCount = 26
+    LeftSidePixelCount = 18,
+    RearPixelCount = 51,
+    RightSidePixelCount = 18,
+    TotalPixelCount = IndicatorPixelCount + FrontPixelCount + LeftSidePixelCount + RearPixelCount + RightSidePixelCount
 } PixelCounts;
 CRGB leds[TotalPixelCount];
 SubStrip full(leds, TotalPixelCount);
 SubStrip indicators(leds, IndicatorPixelCount);
-SubStrip front(leds+3, FrontPixelCount);
+SubStrip front(leds+IndicatorPixelCount, FrontPixelCount);
+SubStrip leftSide(front.leds+FrontPixelCount, LeftSidePixelCount);
+SubStrip rear(leftSide.leds+LeftSidePixelCount, RearPixelCount);
+SubStrip rightSide(rear.leds+RearPixelCount, RightSidePixelCount);
+
 
 
 // buttons/input
@@ -224,12 +231,24 @@ void BlinkFunc(Animation *self, int direction, float f)
     led->leds[oneBehind] = CHSV(HUE_YELLOW, 192, 128);
     led->leds[twoBehind] = CHSV(HUE_YELLOW, 192, 64);
 
-    if(f > 0.7)
+    static const float wanderFraction = 0.7;
+    static const float sideBlinkFraction = 1.0 - wanderFraction;
+    if(f > wanderFraction)
     {
-        float subf = (f-0.6)*2.5;
+        float subf = clamp((f-wanderFraction)*(1.0/sideBlinkFraction), 0.0, 1.0);
+        CRGB fadingYellow = CHSV(HUE_YELLOW, 192, (1-subf)*255);
         for(int i = 0, j = direction>0?led->numPixels()-1:0; i < 3; i++, j -= direction)
         {
-            led->leds[j] = CHSV(HUE_YELLOW, 192, (1-subf)*255);
+            led->leds[j] = fadingYellow;
+        }
+        for(int i = 0, j = direction>0?rear.numPixels()-1:0; i < 17; i++, j -= direction)
+        {
+            rear.leds[j] = fadingYellow;
+        }
+        SubStrip *side = direction==1 ? &rightSide : &leftSide;
+        for(int i = 0; i < side->numPixels(); i++)
+        {
+            side->leds[i] = fadingYellow;
         }
     }
     
@@ -248,7 +267,7 @@ void BlackFunc(Animation *self, int _, float t)
 
 void ShineFunc(Animation *self, int _, float t)
 {
-    SubStrip *leds[] = {&front, /*&rear*/};
+    SubStrip *leds[] = {&front, &rear};
     for(int l = 0, c = sizeof(leds)/sizeof(*leds); l < c; l++) {
         SubStrip *led = leds[l];
         int mid = led->numPixels()/2;
