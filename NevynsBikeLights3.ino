@@ -284,29 +284,49 @@ void ShineFunc(Animation *self, int _, float t)
 
 void SparklyShineFunc(Animation *self, int type, float t)
 {
-    SubStrip *led = &front;
-
+    SubStrip *leds[] = {&front, &rear};
     uint8_t hue1 = t*255;
     uint8_t hue2 = (1-t)*255;
-    int center = led->numPixels()/2;
-    for(int i = 0, c = led->numPixels(); i < c; i++)
+    for(int s = 0; s < sizeof(leds)/sizeof(*leds); s++)
     {
-        uint8_t hue;
-        uint8_t value;
-        if(type%2 == 0)
-            hue = i > center ? hue1 : hue2;
-        if(type%2 == 1)
-            hue = i < center ? hue1 : hue2;
-        int distanceToCenter = abs(i - center);
-        if(type < 1)
-            value = (1-(distanceToCenter/(float)center))*255;
-        else
-            value = 255;
-        led->leds[i] = CHSV(hue + (255/c)*i, 255, value);
+        SubStrip *led = leds[s];
+        if(s==1) type ^= 1; // swap direction of right leds
+        
+        int center = led->numPixels()/2;
+        for(int i = 0, c = led->numPixels(); i < c; i++)
+        {
+            uint8_t hue;
+            uint8_t value;
+            // type 0 and 2 travel forward, 1 and 3 backward
+            if(type%2 == 0)
+                hue = i > center ? hue1 : hue2;
+            else
+                hue = i < center ? hue1 : hue2;
+            int distanceToCenter = abs(i - center);
+            // type 0 and 1 fade to black towards the end
+            if(type < 2)
+                value = (1-(distanceToCenter/(float)center))*255;
+            else
+                value = 255;
+            led->leds[i] = CHSV(hue + (255/c)*i, 255, value);
+        }
+    }
+    
+
+    SubStrip *sideLeds[] = {&leftSide, &rightSide};
+    for(int s = 0; s < sizeof(sideLeds)/sizeof(*sideLeds); s++)
+    {
+        SubStrip *led = sideLeds[s];
+        if(s==1) type ^= 1; // swap direction of right leds
+        for(int i = 0, c = led->numPixels(); i < c; i++)
+        {
+            uint8_t hue = (type%2) ? hue1 : hue2;
+            led->leds[i] = CHSV(hue + (255/c)*i, 255, 255);
+        }
     }
 
     if(type < 2)
         ShineFunc(self, type, t);
     
-    indicators.leds[1] = led->leds[center-2];
+    indicators.leds[1] = leds[0]->leds[leds[0]->numPixels()/2-2];
 }
