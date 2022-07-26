@@ -297,13 +297,17 @@ void ShineFunc(Animation *self, int _, float t)
 {
     SubStrip *leds[] = {&front, &rear};
     for(int l = 0, c = sizeof(leds)/sizeof(*leds); l < c; l++) {
-        SubStrip *led = leds[l];
-        int mid = led->numPixels()/2;
-        for(int i = 0; i < led->numPixels(); i++) {
+        SubStrip &led = *leds[l];
+        int mid = led.numPixels()/2;
+        for(int i = 0; i < led.numPixels(); i++) {
             int distance = abs(mid - i);
-            int range = led->numPixels()/4;
-            uint8_t strength = gamma8(clamp((range-distance)*(255/range), 0, 255));
-            led->leds[i] = led->leds[i] + CRGB(strength, l==0?strength:0, l==0?strength:0);
+            int range = led.numPixels()/4;
+            float fstrength = gammaf(clamp((range-distance)/(float)range, 0.0f, 1.0f));
+            //uint8_t strength = gamma8(clamp((range-distance)*(255/range), 0, 255));
+            //led->leds[i] = led->leds[i] + CRGB(strength, l==0?strength:0, l==0?strength:0);
+            CRGB targetColor = l==0 ? CRGB(255, 255, 255) : CRGB(255, 0, 0);
+            CRGB existingColor = led[i];
+            led[i] = targetColor * fstrength + existingColor * (1 - fstrength);
         }
     }
 
