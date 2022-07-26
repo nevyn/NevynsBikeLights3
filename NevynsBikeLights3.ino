@@ -234,18 +234,28 @@ void setCurrentBgAnim(int newIndex)
 
 // animation funcs
 
-void BlinkFunc(Animation *self, int direction, float f)
+void tripleTrail(SubStrip &strip, int end, float f)
 {
-    int beginAtIndex = front.numPixels()/2;
-    int litIndex = beginAtIndex + f*direction*front.numPixels()/2;
+    int center = strip.numPixels()/2;
+    int direction = end > center ? 1 : -1;
+    int litIndex = center + (end-center)*f;
     int oneBehind = litIndex - direction;
     int twoBehind = litIndex - direction*2;
 
-    front.fill(CRGB(0,0,0), direction==1?beginAtIndex:0, front.numPixels()/2);
+    strip[litIndex] = CHSV(HUE_YELLOW, 192, 255);
+    strip[oneBehind] = CHSV(HUE_YELLOW, 192, 128);
+    strip[twoBehind] = CHSV(HUE_YELLOW, 192, 64);
+}
 
-    front[litIndex] = CHSV(HUE_YELLOW, 192, 255);
-    front[oneBehind] = CHSV(HUE_YELLOW, 192, 128);
-    front[twoBehind] = CHSV(HUE_YELLOW, 192, 64);
+void BlinkFunc(Animation *self, int direction, float f)
+{
+    int fcenter = front.numPixels()/2;
+    front.fill(CRGB(0,0,0), direction==1?fcenter:0, fcenter);
+    tripleTrail(front, fcenter+direction*fcenter, f);
+
+    int rcenter = rear.numPixels()/2;
+    rear.fill(CRGB(0,0,0), direction==1?rcenter:0, rcenter);
+    tripleTrail(rear, rcenter+direction*10, f);
 
     static const float wanderFraction = 0.7;
     static const float sideBlinkFraction = 1.0 - wanderFraction;
@@ -259,7 +269,7 @@ void BlinkFunc(Animation *self, int direction, float f)
         {
             front[j] = fadingYellow;
         }
-        for(int i = 0, j = direction>0?rear.numPixels()-1:0; i < 17; i++, j -= direction)
+        for(int i = 0, j = rcenter+direction*3; i < 10; i++, j += direction)
         {
             rear[j] = fadingYellow;
         }
