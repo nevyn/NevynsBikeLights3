@@ -4,30 +4,37 @@ class SubStrip
 {
 public:
     CRGB *leds;
-    int length;
 
     SubStrip(CRGB *start, int length)
     {
         this->leds = start;
-        this->length = length;
+        this->_length = length;
     }
 
     int numPixels()
     {
-        return length;
+        return _length;
     }
 
     void fill(const struct CRGB &color)
     {
-        fill_solid(leds, length, color);
+        fill_solid(leds, _length, color);
+    }
+    void fill(const struct CRGB &color, int start, int length)
+    {
+        if(start + length > _length)
+            length = _length - start; // no crashy plssss
+        fill_solid(leds+start, length, color);
     }
 
     struct CRGB& operator[](int x)
     {
-        if(x >= length)
+        if(x >= _length)
             x = 0; // avoid crash :P
         return leds[x];
     }
+private:
+    int _length;
 };
 
 template <typename T> T clamp(T value, T low, T high)

@@ -236,31 +236,34 @@ void setCurrentBgAnim(int newIndex)
 
 void BlinkFunc(Animation *self, int direction, float f)
 {
-    SubStrip &led = front;
-    
-    int beginAtIndex = led.numPixels()/2;
-    int litIndex = beginAtIndex + f*direction*led.numPixels()/2;
+    int beginAtIndex = front.numPixels()/2;
+    int litIndex = beginAtIndex + f*direction*front.numPixels()/2;
     int oneBehind = litIndex - direction;
     int twoBehind = litIndex - direction*2;
-    led[litIndex] = CHSV(HUE_YELLOW, 192, 255);
-    led[oneBehind] = CHSV(HUE_YELLOW, 192, 128);
-    led[twoBehind] = CHSV(HUE_YELLOW, 192, 64);
+
+    front.fill(CRGB(0,0,0), direction==1?beginAtIndex:0, front.numPixels()/2);
+
+    front[litIndex] = CHSV(HUE_YELLOW, 192, 255);
+    front[oneBehind] = CHSV(HUE_YELLOW, 192, 128);
+    front[twoBehind] = CHSV(HUE_YELLOW, 192, 64);
 
     static const float wanderFraction = 0.7;
     static const float sideBlinkFraction = 1.0 - wanderFraction;
+    SubStrip &side = direction==1 ? rightSide : leftSide;
+    side.fill(CRGB(0,0,0));
     if(f > wanderFraction)
     {
         float subf = clamp((f-wanderFraction)*(1.0/sideBlinkFraction), 0.0, 1.0);
         CRGB fadingYellow = CHSV(HUE_YELLOW, 192, (1-subf)*255);
-        for(int i = 0, j = direction>0?led.numPixels()-1:0; i < 3; i++, j -= direction)
+        for(int i = 0, j = direction>0?front.numPixels()-1:0; i < 3; i++, j -= direction)
         {
-            led[j] = fadingYellow;
+            front[j] = fadingYellow;
         }
         for(int i = 0, j = direction>0?rear.numPixels()-1:0; i < 17; i++, j -= direction)
         {
             rear[j] = fadingYellow;
         }
-        SubStrip &side = direction==1 ? rightSide : leftSide;
+        
         for(int i = 0; i < side.numPixels(); i++)
         {
             side[i] = fadingYellow;
@@ -269,7 +272,7 @@ void BlinkFunc(Animation *self, int direction, float f)
     
 
     int c = sin8(f*255)/2;
-    indicators[(direction == -1) ? 0 : indicators.length-1] = CRGB(c, c, 0);
+    indicators[(direction == -1) ? 0 : indicators.numPixels()-1] = CRGB(c, c, 0);
 }
 
 void BlackFunc(Animation *self, int _, float t)
