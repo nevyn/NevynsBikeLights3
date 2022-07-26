@@ -12,8 +12,21 @@ public:
         this->length = length;
     }
 
-    int numPixels() {
+    int numPixels()
+    {
         return length;
+    }
+
+    void fill(const struct CRGB &color)
+    {
+        fill_solid(leds, length, color);
+    }
+
+    struct CRGB& operator[](int x)
+    {
+        if(x >= length)
+            x = 0; // avoid crash :P
+        return leds[x];
     }
 };
 
