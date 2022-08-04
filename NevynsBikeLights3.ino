@@ -9,8 +9,15 @@
 
 // LEDs/output
 
-#define DATAPIN    5
-#define CLOCKPIN   6
+// these are good pins for a sparkfun pro micro
+#define LED_DATA_PIN    5
+#define LED_CLOCK_PIN   6
+#define TURN_LEFT_PIN   10
+#define TURN_RIGHT_PIN  16
+#define KNOB_BTN_PIN    14
+#define KNOB_OUT_A_PIN  3  // must be a pin with interrupt
+#define KNOB_OUT_B_PIN  2  // must be a pin with interrupt
+
 
 typedef enum {
     IndicatorPixelCount = 3,
@@ -31,10 +38,10 @@ SubStrip rightSide(rear.leds+RearPixelCount, RightSidePixelCount);
 
 
 // buttons/input
-ezButton btnLeft(10);
-ezButton btnRight(16);
-ezButton btnKnob(14);
-Rotary  knob(3, 2); // inputs 2 and 3 have interrupts 1 and 0 respectively on the Pro Micro
+ezButton btnLeft(TURN_LEFT_PIN);
+ezButton btnRight(TURN_RIGHT_PIN);
+ezButton btnKnob(KNOB_BTN_PIN);
+Rotary  knob(KNOB_OUT_A_PIN, KNOB_OUT_B_PIN);
 
 typedef enum {
     KnobBg,
@@ -95,7 +102,7 @@ static const int bgAnimsCount = sizeof(bgAnims)/sizeof(BoundFunctionAnimation*);
 // main app
 void setup()
 { 
-    FastLED.addLeds<DOTSTAR, DATAPIN, CLOCKPIN, BGR>(leds, TotalPixelCount);
+    FastLED.addLeds<DOTSTAR, LED_DATA_PIN, LED_CLOCK_PIN, BGR>(leds, TotalPixelCount);
     Serial.begin(9600);
 
     attachInterrupt(digitalPinToInterrupt(knob.pin1), rotate, CHANGE);
