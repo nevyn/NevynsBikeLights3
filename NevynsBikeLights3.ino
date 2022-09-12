@@ -14,8 +14,8 @@
 // these are good pins for an esp32
 #define LED_DATA_PIN    32
 #define LED_CLOCK_PIN   33
-#define TURN_LEFT_PIN   12
-#define TURN_RIGHT_PIN  27
+#define TURN_LEFT_PIN   27
+#define TURN_RIGHT_PIN  12
 #define KNOB_BTN_PIN    13
 #define KNOB_OUT_A_PIN  14  // must be a pin with interrupt
 #define KNOB_OUT_B_PIN  15  // must be a pin with interrupt
