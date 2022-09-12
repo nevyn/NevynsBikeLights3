@@ -1,3 +1,5 @@
+#include <SPI.h>          // for hardware spi pins for fastled (must be included first)
+//#define FASTLED_ALL_PINS_HARDWARE_SPI 1
 #include <FastLED.h>      // http://fastled.io/
 #include <ezButton.h>     // https://arduinogetstarted.com/tutorials/arduino-button-library
 #include <OverAnimate.h>  // https://github.com/nevyn/OverAnimate
@@ -9,14 +11,14 @@
 
 // LEDs/output
 
-// these are good pins for a sparkfun pro micro
-#define LED_DATA_PIN    5
-#define LED_CLOCK_PIN   6
-#define TURN_LEFT_PIN   10
-#define TURN_RIGHT_PIN  16
-#define KNOB_BTN_PIN    14
-#define KNOB_OUT_A_PIN  3  // must be a pin with interrupt
-#define KNOB_OUT_B_PIN  2  // must be a pin with interrupt
+// these are good pins for an esp32
+#define LED_DATA_PIN    32
+#define LED_CLOCK_PIN   33
+#define TURN_LEFT_PIN   12
+#define TURN_RIGHT_PIN  27
+#define KNOB_BTN_PIN    13
+#define KNOB_OUT_A_PIN  14  // must be a pin with interrupt
+#define KNOB_OUT_B_PIN  15  // must be a pin with interrupt
 
 
 typedef enum {
@@ -105,6 +107,8 @@ void setup()
     FastLED.addLeds<DOTSTAR, LED_DATA_PIN, LED_CLOCK_PIN, BGR>(leds, TotalPixelCount);
     Serial.begin(9600);
 
+    pinMode(knob.pin1, INPUT_PULLUP);
+    pinMode(knob.pin2, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(knob.pin1), rotate, CHANGE);
     attachInterrupt(digitalPinToInterrupt(knob.pin2), rotate, CHANGE);
 
@@ -164,7 +168,7 @@ void update()
     }
     if(btnKnob.isPressed())
     {
-        knobMode = (knobMode + 1) % KnobModeCount;
+        knobMode = (KnobMode)((knobMode + 1) % KnobModeCount);
         Serial.print("Changing to knob mode ");
         Serial.println(knobMode);
     }
@@ -173,6 +177,7 @@ void update()
     {
         if(blinkLeft.enabled == false)
         {
+            Serial.println("Turning left");
             blinkLeft.beginTime = ansys.now();
         }
         blinkLeft.enabled = true;
@@ -182,6 +187,7 @@ void update()
     {
         if(blinkRight.enabled == false)
         {
+            Serial.println("Turning right");
             blinkRight.beginTime = ansys.now();
         }
         blinkRight.enabled = true;
